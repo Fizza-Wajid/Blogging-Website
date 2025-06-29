@@ -1,0 +1,41 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install linters
+        run: |
+          npm install -g htmlhint stylelint stylelint-config-standard
+
+      - name: Run HTMLHint
+        run: htmlhint "**/*.html" --rules=tagname-lowercase,attr-lowercase,alt-require,id-unique,tag-pair
+
+      - name: Run Stylelint
+        run: stylelint "**/*.css" --config-basedir . --config stylelint.config.js || true
+
+  build:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install -D parcel
+
+      - name: Build project
+        run: npx parcel build src/*.html --dist-dir build
